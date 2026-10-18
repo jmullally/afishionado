@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+:root {
+  --cream: #f6f1e7;
+  --paper: #fffdf8;
+  --ink: #13263a;
+  --muted: #5d6b78;
+  --line: #e4dccb;
+  --sea: #1c6e72;
+  --sea-dark: #14565a;
+  --gold: #e3a52a;
+  --coral: #d9573b;
+  color-scheme: light;
+}
+
+@theme inline {
+  --color-cream: var(--cream);
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-sea: var(--sea);
+  --color-sea-dark: var(--sea-dark);
+  --color-gold: var(--gold);
+  --color-coral: var(--coral);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display-face);
+}
+
+html {
+  background: var(--cream);
+}
+
+body {
+  background: var(--cream);
+  color: var(--ink);
+  font-family: var(--font-body), system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Inputs at 16px stop iOS Safari from zooming in on focus. */
+input,
+select,
+textarea {
+  font-size: 16px;
+}
+
+.field {
+  @apply w-full rounded-xl border border-line bg-paper px-3.5 py-3 text-ink placeholder:text-muted/70 outline-none focus:border-sea focus:ring-2 focus:ring-sea/20;
+}
+
+.btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl bg-sea px-4 py-3 font-semibold text-white transition active:scale-[0.98] hover:bg-sea-dark disabled:opacity-50;
+}
+
+.btn-ghost {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-paper px-4 py-3 font-semibold text-ink transition active:scale-[0.98] hover:border-sea;
+}
+
+.card {
+  @apply rounded-2xl border border-line bg-paper;
+}
+
+.chip {
+  @apply shrink-0 rounded-full border border-line bg-paper px-3 py-1.5 text-sm capitalize text-ink;
+}
+
+.chip[data-active="true"] {
+  @apply border-sea bg-sea text-white;
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}

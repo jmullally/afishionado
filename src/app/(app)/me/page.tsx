@@ -1,0 +1,97 @@
+import Link from "next/link";
+import { signOut } from "@/app/actions";
+import { PageHeader } from "@/components/PageHeader";
+import { Stars } from "@/components/Stars";
+import { requireUser } from "@/lib/supabase/server";
+import { CHECKIN_SELECT, type Checkin } from "@/lib/types";
+
+export default async function MePage() {
+  const { supabase, user } = await requireUser();
+  const [{ data: profile }, { data }, { count: wishCount }] = await Promise.all([
+    supabase.from("profiles").select("display_name").eq("id", user.id).maybeSingle(),
+    supabase.from("checkins").select(CHECKIN_SELECT),
+    supabase.from("wishlist").select("product_id", { count: "exact", head: true }).eq("user_id", user.id),
+  ]);
+  const checkins = (data ?? []) as Checkin[];
+
+  const uniqueTins = new Set(checkins.map((c) => c.product_id)).size;
+  const avg = checkins.length ? checkins.reduce((s, c) => s + Number(c.rating), 0) / checkins.length : 0;
+
+  const bySpecies = new Map<string, number>();
+  for (const c of checkins) bySpecies.set(c.product.species, (bySpecies.get(c.product.species) ?? 0) + 1);
+  const species = [...bySpecies.entries()].sort((a, b) => b[1] - a[1]);
+
+  const bestByProduct = new Map<string, Checkin>();
+  for (const c of checkins) {
+    const prev = bestByProduct.get(c.product_id);
+    if (!prev || Number(c.rating) > Number(prev.rating)) bestByProduct.set(c.product_id, c);
+  }
+  const favorites = [...bestByProduct.values()].sort((a, b) => Number(b.rating) - Number(a.rating)).slice(0, 5);
+
+  return (
+    <>
+      <PageHeader title={profile?.display_name ?? "Me"} />
+
+      <div className="mb-4 grid grid-cols-3 gap-2 text-center">
+        {[
+          ["Check-ins", checkins.length],
+          ["Tins tried", uniqueTins],
+          ["Avg rating", checkins.length ? avg.toFixed(1) : "–"],
+        ].map(([label, value]) => (
+          <div key={label} className="card p-3">
+            <p className="font-display text-2xl font-bold">{value}</p>
+            <p className="text-xs text-muted">{label}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="space-y-4">
+        <Link href="/wishlist" className="card flex items-center justify-between p-4 hover:border-sea">
+          <span className="font-semibold">☆ Want to try</span>
+          <span className="text-muted">{wishCount ?? 0} ›</span>
+        </Link>
+
+        {favorites.length > 0 && (
+          <section className="card p-4">
+            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted">Top tins</h2>
+            <ol className="divide-y divide-line">
+              {favorites.map((c) => (
+                <li key={c.product_id}>
+                  <Link href={`/tins/${c.product_id}`} className="flex items-center justify-between gap-3 py-2.5">
+                    <span className="min-w-0">
+                      <span className="block truncate text-xs text-sea">{c.product.brand.name}</span>
+                      <span className="block truncate font-medium">{c.product.name}</span>
+                    </span>
+                    <Stars rating={Number(c.rating)} size="text-sm" />
+                  </Link>
+                </li>
+              ))}
+            </ol>
+          </section>
+        )}
+
+        {species.length > 0 && (
+          <section className="card p-4">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">By fish</h2>
+            <div className="space-y-2">
+              {species.map(([s, n]) => (
+                <div key={s} className="flex items-center gap-3 text-sm">
+                  <span className="w-20 capitalize">{s}</span>
+                  <span className="h-2 flex-1 overflow-hidden rounded-full bg-cream">
+                    <span className="block h-full rounded-full bg-sea" style={{ width: `${(n / species[0][1]) * 100}%` }} />
+                  </span>
+                  <span className="w-6 text-right text-muted">{n}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        <p className="text-center text-sm text-muted">{user.email}</p>
+        <form action={signOut}>
+          <button className="btn-ghost w-full">Sign out</button>
+        </form>
+      </div>
+    </>
+  );
+}

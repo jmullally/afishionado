@@ -1,0 +1,50 @@
+import { createServerClient } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
+import { isConfigured, SUPABASE_KEY, SUPABASE_URL } from "@/lib/supabase/config";
+
+const PUBLIC_PATHS = ["/login", "/setup", "/auth"];
+
+export async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const isPublic = PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+
+  if (!isConfigured) {
+    return pathname === "/setup" ? NextResponse.next() : NextResponse.redirect(new URL("/setup", request.url));
+  }
+
+  let response = NextResponse.next({ request });
+  const supabase = createServerClient(SUPABASE_URL, SUPABASE_KEY, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+        response = NextResponse.next({ request });
+        cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+      },
+    },
+  });
+
+  let signedIn = false;
+  try {
+    const { data } = await supabase.auth.getUser();
+    signedIn = Boolean(data.user);
+  } catch {
+    // Supabase unreachable: treat as signed out.
+  }
+
+  const redirectTo = (path: string) => {
+    const r = NextResponse.redirect(new URL(path, request.url));
+    response.cookies.getAll().forEach((c) => r.cookies.set(c));
+    return r;
+  };
+
+  if (!signedIn && !isPublic) return redirectTo("/login");
+  if (signedIn && pathname === "/login") return redirectTo("/");
+  return response;
+}
+
+export const config = {
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|icons/|.*\\.(?:svg|png|jpg|jpeg|ico|webp)$).*)"],
+};
