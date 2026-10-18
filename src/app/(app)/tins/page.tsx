@@ -1,15 +1,22 @@
+import { Suspense } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { TinSearch } from "@/components/TinSearch";
+import Loading from "../loading";
 
-export default async function TinsPage({ searchParams }: PageProps<"/tins">) {
+async function Results({ searchParams }: Pick<PageProps<"/tins">, "searchParams">) {
   const sp = await searchParams;
   const q = typeof sp.q === "string" ? sp.q : "";
   const species = typeof sp.species === "string" ? sp.species : "";
+  return <TinSearch q={q} species={species} basePath="/tins" mode="browse" />;
+}
 
+export default function TinsPage({ searchParams }: PageProps<"/tins">) {
   return (
     <>
       <PageHeader title="Tins" />
-      <TinSearch q={q} species={species} basePath="/tins" mode="browse" />
+      <Suspense fallback={<Loading />}>
+        <Results searchParams={searchParams} />
+      </Suspense>
     </>
   );
 }

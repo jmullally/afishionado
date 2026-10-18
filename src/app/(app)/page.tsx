@@ -1,11 +1,13 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { CheckinCard } from "@/components/CheckinCard";
 import { Wordmark } from "@/components/Logo";
 import { withPhotoUrls } from "@/lib/photos";
 import { requireUser } from "@/lib/supabase/server";
 import { CHECKIN_SELECT, type Checkin } from "@/lib/types";
+import Loading from "./loading";
 
-export default async function DiaryPage() {
+async function DiaryPageContent() {
   const { supabase } = await requireUser();
   const { data } = await supabase
     .from("checkins")
@@ -38,5 +40,14 @@ export default async function DiaryPage() {
         </div>
       )}
     </>
+  );
+}
+
+// Streams behind a skeleton so tapping between tabs responds instantly.
+export default function DiaryPage() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <DiaryPageContent />
+    </Suspense>
   );
 }

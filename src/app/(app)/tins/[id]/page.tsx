@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CheckinCard } from "@/components/CheckinCard";
@@ -8,8 +9,9 @@ import { WishlistButton } from "@/components/WishlistButton";
 import { withPhotoUrls } from "@/lib/photos";
 import { requireUser } from "@/lib/supabase/server";
 import { CHECKIN_SELECT, PRODUCT_SELECT, type Checkin, type Product } from "@/lib/types";
+import Loading from "../../loading";
 
-export default async function TinPage({ params }: PageProps<"/tins/[id]">) {
+async function TinPageContent({ params }: Pick<PageProps<"/tins/[id]">, "params">) {
   const { id } = await params;
   const { supabase, user } = await requireUser();
 
@@ -50,7 +52,9 @@ export default async function TinPage({ params }: PageProps<"/tins/[id]">) {
             {stats?.checkin_count ? (
               <>
                 <p className="font-display text-xl font-bold">{Number(stats.avg_rating).toFixed(1)}</p>
-                <p className="text-xs text-muted">{stats.checkin_count} check-ins</p>
+                <p className="text-xs text-muted">
+                  {stats.checkin_count} check-in{Number(stats.checkin_count) === 1 ? "" : "s"}
+                </p>
               </>
             ) : (
               <p className="py-2 text-sm text-muted">No ratings yet</p>
@@ -86,5 +90,14 @@ export default async function TinPage({ params }: PageProps<"/tins/[id]">) {
         </section>
       )}
     </>
+  );
+}
+
+// Streams behind a skeleton so tapping between tabs responds instantly.
+export default function TinPage({ params }: PageProps<"/tins/[id]">) {
+  return (
+    <Suspense fallback={<Loading />}>
+      <TinPageContent params={params} />
+    </Suspense>
   );
 }

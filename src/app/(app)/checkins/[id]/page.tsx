@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DeleteCheckinButton } from "@/components/DeleteCheckinButton";
@@ -8,8 +9,9 @@ import { formatDate } from "@/lib/format";
 import { withPhotoUrls } from "@/lib/photos";
 import { requireUser } from "@/lib/supabase/server";
 import { CHECKIN_SELECT, type Checkin } from "@/lib/types";
+import Loading from "../../loading";
 
-export default async function CheckinPage({ params }: PageProps<"/checkins/[id]">) {
+async function CheckinPageContent({ params }: Pick<PageProps<"/checkins/[id]">, "params">) {
   const { id } = await params;
   const { supabase } = await requireUser();
   const { data } = await supabase.from("checkins").select(CHECKIN_SELECT).eq("id", id).maybeSingle<Checkin>();
@@ -55,5 +57,14 @@ export default async function CheckinPage({ params }: PageProps<"/checkins/[id]"
         <DeleteCheckinButton id={checkin.id} />
       </div>
     </>
+  );
+}
+
+// Streams behind a skeleton so tapping between tabs responds instantly.
+export default function CheckinPage({ params }: PageProps<"/checkins/[id]">) {
+  return (
+    <Suspense fallback={<Loading />}>
+      <CheckinPageContent params={params} />
+    </Suspense>
   );
 }

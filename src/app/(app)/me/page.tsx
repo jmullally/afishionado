@@ -1,11 +1,13 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { signOut } from "@/app/actions";
 import { PageHeader } from "@/components/PageHeader";
 import { Stars } from "@/components/Stars";
 import { requireUser } from "@/lib/supabase/server";
 import { CHECKIN_SELECT, type Checkin } from "@/lib/types";
+import Loading from "../loading";
 
-export default async function MePage() {
+async function MePageContent() {
   const { supabase, user } = await requireUser();
   const [{ data: profile }, { data }, { count: wishCount }] = await Promise.all([
     supabase.from("profiles").select("display_name").eq("id", user.id).maybeSingle(),
@@ -93,5 +95,14 @@ export default async function MePage() {
         </form>
       </div>
     </>
+  );
+}
+
+// Streams behind a skeleton so tapping between tabs responds instantly.
+export default function MePage() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <MePageContent />
+    </Suspense>
   );
 }

@@ -1,10 +1,12 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { PageHeader } from "@/components/PageHeader";
 import { withPhotoUrls } from "@/lib/photos";
 import { requireUser } from "@/lib/supabase/server";
 import { CHECKIN_SELECT, type Checkin } from "@/lib/types";
+import Loading from "../loading";
 
-export default async function PhotosPage() {
+async function PhotosPageContent() {
   const { supabase } = await requireUser();
   const { data } = await supabase
     .from("checkins")
@@ -36,5 +38,14 @@ export default async function PhotosPage() {
         </div>
       )}
     </>
+  );
+}
+
+// Streams behind a skeleton so tapping between tabs responds instantly.
+export default function PhotosPage() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <PhotosPageContent />
+    </Suspense>
   );
 }

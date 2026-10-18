@@ -1,11 +1,13 @@
+import { Suspense } from "react";
 import { CheckinForm } from "@/components/CheckinForm";
 import { PageHeader } from "@/components/PageHeader";
 import { TinSearch } from "@/components/TinSearch";
 import { TinRow } from "@/components/TinRow";
 import { requireUser } from "@/lib/supabase/server";
 import { PRODUCT_SELECT, type Product } from "@/lib/types";
+import Loading from "../../loading";
 
-export default async function NewCheckinPage({ searchParams }: PageProps<"/checkin/new">) {
+async function CheckinStep({ searchParams }: Pick<PageProps<"/checkin/new">, "searchParams">) {
   const sp = await searchParams;
   const productId = typeof sp.product === "string" ? sp.product : "";
 
@@ -42,5 +44,13 @@ export default async function NewCheckinPage({ searchParams }: PageProps<"/check
         <p className="text-muted">That tin couldn&apos;t be found.</p>
       )}
     </>
+  );
+}
+
+export default function NewCheckinPage({ searchParams }: PageProps<"/checkin/new">) {
+  return (
+    <Suspense fallback={<Loading />}>
+      <CheckinStep searchParams={searchParams} />
+    </Suspense>
   );
 }

@@ -1,10 +1,12 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { PageHeader } from "@/components/PageHeader";
 import { TinRow } from "@/components/TinRow";
 import { requireUser } from "@/lib/supabase/server";
 import type { Product } from "@/lib/types";
+import Loading from "../loading";
 
-export default async function WishlistPage() {
+async function WishlistPageContent() {
   const { supabase, user } = await requireUser();
   const { data } = await supabase
     .from("wishlist")
@@ -31,5 +33,14 @@ export default async function WishlistPage() {
         </div>
       )}
     </>
+  );
+}
+
+// Streams behind a skeleton so tapping between tabs responds instantly.
+export default function WishlistPage() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <WishlistPageContent />
+    </Suspense>
   );
 }

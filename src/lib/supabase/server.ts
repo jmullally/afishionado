@@ -1,9 +1,13 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { SUPABASE_KEY, SUPABASE_URL } from "./config";
 
 export async function createClient() {
+  // Per-user data is always request-time; this also stops supabase-js's internal
+  // Date.now() calls from tripping Cache Components' prerender checks.
+  await connection();
   const cookieStore = await cookies();
   return createServerClient(SUPABASE_URL, SUPABASE_KEY, {
     cookies: {
