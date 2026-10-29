@@ -41,19 +41,24 @@ Open http://localhost:3000. Without `.env.local`, the app shows a setup page ins
 
 ### 3. Deploy
 
-The live app is at **https://afishionado.vercel.app**. It's hosted on Vercel (Hobby plan) from the `main` branch of [jmullally/afishionado](https://github.com/jmullally/afishionado). Every push to `main` redeploys automatically.
+The live app is at **https://afishionado.app**. It's hosted on Vercel (Hobby plan) from the `main` branch of [jmullally/afishionado](https://github.com/jmullally/afishionado), and every push to `main` redeploys automatically. `www.afishionado.app` and `afishionado.vercel.app` keep working too.
 
 How it was set up, in case you need to redo it:
 
 1. Import the GitHub repo at [vercel.com/new](https://vercel.com/new); Next.js is detected automatically.
 2. Add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` under Environment Variables for Production and Preview.
-3. In Supabase, go to **Authentication → URL Configuration**. Set **Site URL** to `https://afishionado.vercel.app` and add these redirect URLs:
+3. Under **Vercel → Settings → Domains**, add `afishionado.app` (Production) and `www.afishionado.app` (redirecting to `afishionado.app`).
+4. In **Porkbun DNS** for afishionado.app, delete the default parking records, then add:
+   - `A` record: host blank, value `216.198.79.1`
+   - `CNAME` record: host `www`, value `a81fdcbf443b38e6.vercel-dns-017.com`
+5. In Supabase, go to **Authentication → URL Configuration**. Set **Site URL** to `https://afishionado.app` and add these redirect URLs:
+   - `https://afishionado.app/auth/callback`
    - `https://afishionado.vercel.app/auth/callback`
    - `http://localhost:3000/auth/callback`
 
 ### 4. Put it on an iPhone
 
-1. Open https://afishionado.vercel.app in **Safari**. It must be Safari, not Chrome.
+1. Open https://afishionado.app in **Safari**. It must be Safari, not Chrome.
 2. Sign in, or create an account.
 3. Tap the **Share** button (the square with an arrow), scroll down, and tap **Add to Home Screen**, then **Add**.
 4. Open it from the new tin icon. It runs full-screen like a native app, and stays signed in.
