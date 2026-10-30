@@ -6,6 +6,7 @@ const display = Fraunces({ variable: "--font-display-face", subsets: ["latin"], 
 const body = Inter({ variable: "--font-body", subsets: ["latin"] });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://afishionado.app"),
   title: "afishionado",
   description: "Log, rate and remember every tin of fish you try.",
   appleWebApp: { capable: true, title: "afishionado", statusBarStyle: "default" },
