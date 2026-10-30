@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DeleteCheckinButton } from "@/components/DeleteCheckinButton";
 import { PageHeader } from "@/components/PageHeader";
+import { ShareCardButton } from "@/components/ShareCardButton";
 import { SharePhotoButton } from "@/components/SharePhotoButton";
 import { Stars } from "@/components/Stars";
 import { formatDate } from "@/lib/format";
@@ -56,6 +57,19 @@ async function CheckinPageContent({ params }: Pick<PageProps<"/checkins/[id]">, 
       </article>
 
       <div className="mt-4 space-y-3">
+        <ShareCardButton
+          card={{
+            photoUrl: checkin.photo_url ?? null,
+            brand: product.brand.name,
+            name: product.name,
+            rating: Number(checkin.rating),
+            note: checkin.note,
+            meta: [formatDate(checkin.tried_on), checkin.location].filter(Boolean).join(" · "),
+          }}
+          filename={`afishionado-card-${checkin.id.slice(0, 8)}.jpg`}
+          title={shareTitle}
+          text={shareText}
+        />
         {checkin.photo_url && (
           <SharePhotoButton url={checkin.photo_url} filename={`afishionado-${checkin.id.slice(0, 8)}.jpg`} title={shareTitle} text={shareText} />
         )}

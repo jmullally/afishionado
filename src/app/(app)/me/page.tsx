@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { signOut } from "@/app/actions";
+import { ExportButton } from "@/components/ExportButton";
 import { PageHeader } from "@/components/PageHeader";
 import { Stars } from "@/components/Stars";
 import { requireUser } from "@/lib/supabase/server";
@@ -88,6 +89,8 @@ async function MePageContent() {
             </div>
           </section>
         )}
+
+        <ExportButton />
 
         <p className="text-center text-sm text-muted">{user.email}</p>
         <form action={signOut}>

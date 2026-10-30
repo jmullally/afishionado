@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/supabase/server";
+import { normalizeBarcode } from "@/lib/barcode";
 import { photoPaths } from "@/lib/photos";
 import { PHOTO_BUCKET } from "@/lib/supabase/config";
 
@@ -40,6 +41,7 @@ export async function addTin(_prev: AddTinState, form: FormData): Promise<AddTin
   const packing = String(form.get("packing") ?? "").trim() || null;
   const sizeRaw = Number(form.get("size_g"));
   const size_g = Number.isFinite(sizeRaw) && sizeRaw > 0 ? Math.round(sizeRaw) : null;
+  const barcode = normalizeBarcode(String(form.get("barcode") ?? ""));
 
   if (!brandName || !name || !species) return { error: "Brand, name and species are required." };
 
@@ -56,13 +58,28 @@ export async function addTin(_prev: AddTinState, form: FormData): Promise<AddTin
 
   const { data: product, error } = await supabase
     .from("products")
-    .insert({ brand_id: brand.id, name, species, packing, size_g, created_by: user.id })
+    .insert({ brand_id: brand.id, name, species, packing, size_g, barcode, created_by: user.id })
     .select("id")
     .single();
-  if (error) return { error: error.message };
+  if (error) {
+    if (error.code === "23505") return { error: "Another tin in the catalog already has this barcode." };
+    return { error: error.message };
+  }
 
   revalidatePath("/tins");
   redirect(`/checkin/new?product=${product.id}`);
+}
+
+/** Attaches a scanned barcode to a catalog tin, then continues to it (or its check-in form). */
+export async function linkBarcode(form: FormData) {
+  const { supabase } = await requireUser();
+  const barcode = normalizeBarcode(String(form.get("barcode") ?? ""));
+  const productId = String(form.get("product") ?? "");
+  if (barcode && productId) {
+    await supabase.rpc("set_product_barcode", { p_product_id: productId, p_barcode: barcode });
+  }
+  revalidatePath("/tins");
+  redirect(form.get("for") === "checkin" ? `/checkin/new?product=${productId}` : `/tins/${productId}`);
 }
 
 export async function signOut() {

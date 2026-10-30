@@ -4,14 +4,24 @@ import { useActionState } from "react";
 import { addTin, type AddTinState } from "@/app/actions";
 import { PACKINGS, SPECIES } from "@/lib/types";
 
-export function AddTinForm({ brands, defaultName }: { brands: string[]; defaultName: string }) {
+export type AddTinDefaults = { name: string; brand: string; sizeG: string; barcode: string };
+
+export function AddTinForm({ brands, defaults }: { brands: string[]; defaults: AddTinDefaults }) {
   const [state, formAction, pending] = useActionState<AddTinState, FormData>(addTin, {});
 
   return (
     <form action={formAction} className="space-y-4">
+      {defaults.barcode && (
+        <>
+          <input type="hidden" name="barcode" value={defaults.barcode} />
+          <p className="rounded-xl bg-sea/10 p-3 text-sm text-sea">
+            Barcode <span className="font-mono">{defaults.barcode}</span> will be saved with this tin.
+          </p>
+        </>
+      )}
       <label className="block space-y-1.5">
         <span className="text-sm font-semibold">Brand</span>
-        <input name="brand" list="brand-list" required className="field" placeholder="e.g. Ortiz" autoComplete="off" />
+        <input name="brand" list="brand-list" required defaultValue={defaults.brand} className="field" placeholder="e.g. Ortiz" autoComplete="off" />
         <datalist id="brand-list">
           {brands.map((b) => (
             <option key={b} value={b} />
@@ -24,7 +34,7 @@ export function AddTinForm({ brands, defaultName }: { brands: string[]; defaultN
         <input
           name="name"
           required
-          defaultValue={defaultName}
+          defaultValue={defaults.name}
           className="field"
           placeholder="e.g. Sardines in Olive Oil"
         />
@@ -61,7 +71,7 @@ export function AddTinForm({ brands, defaultName }: { brands: string[]; defaultN
         <span className="text-sm font-semibold">
           Size <span className="font-normal text-muted">(grams, optional)</span>
         </span>
-        <input name="size_g" type="number" inputMode="numeric" min={1} className="field" placeholder="120" />
+        <input name="size_g" type="number" inputMode="numeric" min={1} defaultValue={defaults.sizeG} className="field" placeholder="120" />
       </label>
 
       {state.error && <p className="rounded-xl bg-coral/10 p-3 text-sm text-coral">{state.error}</p>}

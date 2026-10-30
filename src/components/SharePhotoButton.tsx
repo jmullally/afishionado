@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { shareFile } from "@/lib/share";
 
 /**
  * Opens the iOS/Android share sheet with the photo attached (Save Image, Instagram,
@@ -38,26 +39,13 @@ export function SharePhotoButton({
 
   async function share() {
     if (!file) return;
-    setError(null);
-    if (navigator.canShare?.({ files: [file] })) {
-      try {
-        await navigator.share({ files: [file], title, text });
-      } catch (err) {
-        // Dismissing the share sheet is not an error.
-        if (!(err instanceof DOMException && err.name === "AbortError")) setError("Couldn't share the photo.");
-      }
-      return;
-    }
-    const href = URL.createObjectURL(file);
-    const a = Object.assign(document.createElement("a"), { href, download: filename });
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(href), 1000);
+    setError(await shareFile(file, title, text));
   }
 
   return (
     <>
-      <button type="button" onClick={share} disabled={!file} className="btn w-full">
-        {file ? "Share or save photo" : "Preparing photo…"}
+      <button type="button" onClick={share} disabled={!file} className="btn-ghost w-full">
+        {file ? "Share or save just the photo" : "Preparing photo…"}
       </button>
       {error && <p className="text-center text-sm text-coral">{error}</p>}
     </>

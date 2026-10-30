@@ -1,19 +1,25 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { PRODUCT_SELECT, SPECIES, type Product } from "@/lib/types";
+import { ScanButton } from "./ScanButton";
 import { TinRow } from "./TinRow";
 
-/** Search form + results. `basePath` is the page the form submits to; in "checkin" mode results open the check-in form. */
+/**
+ * Search form + results. `basePath` is the page the form submits to; in "checkin" mode results open
+ * the check-in form. With `barcode`, results instead ask to link that scanned barcode to the tin.
+ */
 export async function TinSearch({
   q,
   species,
   basePath,
   mode,
+  barcode,
 }: {
   q: string;
   species: string;
   basePath: string;
   mode: "browse" | "checkin";
+  barcode?: string;
 }) {
   const supabase = await createClient();
   // Strip characters that have meaning in PostgREST filter strings.
@@ -37,15 +43,22 @@ export async function TinSearch({
     const params = new URLSearchParams();
     if (q) params.set("q", q);
     if (s) params.set("species", s);
+    if (barcode && mode === "checkin") params.set("for", "checkin");
     const qs = params.toString();
     return qs ? `${basePath}?${qs}` : basePath;
   };
-  const linkFor = (p: Product) => (mode === "checkin" ? `/checkin/new?product=${p.id}` : `/tins/${p.id}`);
+  const linkFor = (p: Product) =>
+    barcode
+      ? `/scan/${barcode}/link?product=${p.id}${mode === "checkin" ? "&for=checkin" : ""}`
+      : mode === "checkin"
+        ? `/checkin/new?product=${p.id}`
+        : `/tins/${p.id}`;
 
   return (
     <div className="space-y-4">
       <form action={basePath} className="flex gap-2">
         {species && <input type="hidden" name="species" value={species} />}
+        {barcode && mode === "checkin" && <input type="hidden" name="for" value="checkin" />}
         <input
           name="q"
           defaultValue={q}
@@ -57,6 +70,7 @@ export async function TinSearch({
         <button className="btn" type="submit">
           Go
         </button>
+        {!barcode && <ScanButton mode={mode} />}
       </form>
 
       <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
@@ -76,12 +90,14 @@ export async function TinSearch({
         ))}
       </div>
 
-      <div className="card p-4 text-center">
-        <p className="text-muted">{products.length === 0 ? "No tins match." : "Can't find your tin?"}</p>
-        <Link href={`/tins/new${q ? `?name=${encodeURIComponent(q)}` : ""}`} className="btn-ghost mt-3 w-full">
-          Add a new tin
-        </Link>
-      </div>
+      {!barcode && (
+        <div className="card p-4 text-center">
+          <p className="text-muted">{products.length === 0 ? "No tins match." : "Can't find your tin?"}</p>
+          <Link href={`/tins/new${q ? `?name=${encodeURIComponent(q)}` : ""}`} className="btn-ghost mt-3 w-full">
+            Add a new tin
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
