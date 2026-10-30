@@ -30,8 +30,8 @@ export function LoginForm() {
     const supabase = createClient();
 
     if (mode === "forgot") {
-      // The default email template links back via /auth/callback (same browser only). Once custom
-      // SMTP is set up, the template can point at /auth/confirm instead, which works in any browser.
+      // The Supabase "Reset password" email template links to /auth/confirm?…&next=/reset-password,
+      // which works in any browser. redirectTo is only used if that template is ever reset to default.
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
       });

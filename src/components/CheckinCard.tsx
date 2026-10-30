@@ -9,7 +9,7 @@ export function CheckinCard({ checkin }: { checkin: Checkin }) {
     <Link href={`/checkins/${checkin.id}`} className="card block overflow-hidden transition hover:border-sea">
       {checkin.photo_url && (
         // eslint-disable-next-line @next/next/no-img-element -- signed Supabase URLs
-        <img src={checkin.photo_url} alt="" className="aspect-[4/3] w-full object-cover" loading="lazy" />
+        <img src={checkin.thumb_url ?? undefined} alt="" className="aspect-[4/3] w-full object-cover" loading="lazy" />
       )}
       <div className="space-y-1.5 p-4">
         <div className="flex items-start justify-between gap-3">

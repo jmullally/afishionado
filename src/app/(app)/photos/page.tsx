@@ -29,7 +29,7 @@ async function PhotosPageContent() {
           {photos.map((c) => (
             <Link key={c.id} href={`/checkins/${c.id}`} className="relative block overflow-hidden rounded-lg bg-line">
               {/* eslint-disable-next-line @next/next/no-img-element -- signed Supabase URLs */}
-              <img src={c.photo_url ?? ""} alt={c.product.name} className="aspect-square w-full object-cover" loading="lazy" />
+              <img src={c.thumb_url ?? ""} alt={c.product.name} className="aspect-square w-full object-cover" loading="lazy" />
               <span className="absolute bottom-1 right-1 rounded bg-ink/70 px-1 text-[11px] font-semibold text-white">
                 {Number(c.rating).toFixed(1)}★
               </span>

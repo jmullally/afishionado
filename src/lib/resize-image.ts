@@ -1,8 +1,9 @@
 /**
  * Downscales a photo to at most `maxSide` px and re-encodes it as JPEG, so iPhone
  * photos (often 4–12 MB, sometimes HEIC) upload quickly and display everywhere.
+ * The 1600px default is still plenty for sharing (Instagram tops out at 1440px wide).
  */
-export async function resizeImage(file: File, maxSide = 2048, quality = 0.85): Promise<Blob> {
+export async function resizeImage(file: File, maxSide = 1600, quality = 0.82): Promise<Blob> {
   const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
   const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
   const width = Math.round(bitmap.width * scale);

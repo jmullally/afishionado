@@ -24,11 +24,14 @@ export type Checkin = {
   note: string | null;
   location: string | null;
   photo_path: string | null;
+  thumb_path: string | null;
   tried_on: string;
   created_at: string;
   product: Product;
   /** Signed URL for photo_path, filled in server-side. */
   photo_url?: string | null;
+  /** Signed URL for thumb_path, falling back to photo_url for older photos without one. */
+  thumb_url?: string | null;
 };
 
 export const SPECIES = [

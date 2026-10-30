@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { PHOTO_BUCKET } from "@/lib/supabase/config";
+import { photoPaths } from "@/lib/photos";
 import { resizeImage } from "@/lib/resize-image";
 import { todayLocal } from "@/lib/format";
 import type { Checkin } from "@/lib/types";
@@ -41,14 +42,22 @@ export function CheckinForm({ productId, existing }: { productId: string; existi
       } = await supabase.auth.getUser();
       if (!user) throw new Error("You've been signed out. Sign in again.");
 
-      let photo_path: string | null = null;
+      // A newly picked photo is stored twice: a shareable full-size copy and a small preview.
+      let uploaded: { photo_path: string; thumb_path: string } | null = null;
       if (photo) {
-        const blob = await resizeImage(photo);
-        photo_path = `${user.id}/${crypto.randomUUID()}.jpg`;
-        const { error: upErr } = await supabase.storage
-          .from(PHOTO_BUCKET)
-          .upload(photo_path, blob, { contentType: "image/jpeg" });
-        if (upErr) throw upErr;
+        const id = `${user.id}/${crypto.randomUUID()}`;
+        const [full, thumb] = await Promise.all([resizeImage(photo), resizeImage(photo, 800, 0.75)]);
+        uploaded = { photo_path: `${id}.jpg`, thumb_path: `${id}_thumb.jpg` };
+        const bucket = supabase.storage.from(PHOTO_BUCKET);
+        const results = await Promise.all([
+          bucket.upload(uploaded.photo_path, full, { contentType: "image/jpeg" }),
+          bucket.upload(uploaded.thumb_path, thumb, { contentType: "image/jpeg" }),
+        ]);
+        const upErr = results.find((r) => r.error)?.error;
+        if (upErr) {
+          await bucket.remove(photoPaths(uploaded));
+          throw upErr;
+        }
       }
 
       const fields = {
@@ -58,25 +67,29 @@ export function CheckinForm({ productId, existing }: { productId: string; existi
         tried_on: triedOn,
       };
       // When editing, keep the saved photo unless it was removed or replaced.
-      const keptPhoto = existing && preview && !photo ? existing.photo_path : null;
+      const kept = existing && preview && !photo ? existing : null;
+      const photoFields = uploaded ?? {
+        photo_path: kept?.photo_path ?? null,
+        thumb_path: kept?.thumb_path ?? null,
+      };
       const { data, error: saveErr } = existing
         ? await supabase
             .from("checkins")
-            .update({ ...fields, photo_path: photo_path ?? keptPhoto })
+            .update({ ...fields, ...photoFields })
             .eq("id", existing.id)
             .select("id")
             .single()
         : await supabase
             .from("checkins")
-            .insert({ ...fields, product_id: productId, photo_path })
+            .insert({ ...fields, ...photoFields, product_id: productId })
             .select("id")
             .single();
       if (saveErr) {
-        if (photo_path) await supabase.storage.from(PHOTO_BUCKET).remove([photo_path]);
+        if (uploaded) await supabase.storage.from(PHOTO_BUCKET).remove(photoPaths(uploaded));
         throw saveErr;
       }
-      if (existing?.photo_path && existing.photo_path !== (photo_path ?? keptPhoto)) {
-        await supabase.storage.from(PHOTO_BUCKET).remove([existing.photo_path]);
+      if (existing?.photo_path && !kept) {
+        await supabase.storage.from(PHOTO_BUCKET).remove(photoPaths(existing));
       }
 
       router.push(`/checkins/${data.id}`);

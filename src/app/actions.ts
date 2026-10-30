@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/supabase/server";
+import { photoPaths } from "@/lib/photos";
 import { PHOTO_BUCKET } from "@/lib/supabase/config";
 
 export async function toggleWishlist(productId: string, saved: boolean) {
@@ -18,11 +19,12 @@ export async function toggleWishlist(productId: string, saved: boolean) {
 
 export async function deleteCheckin(id: string) {
   const { supabase } = await requireUser();
-  const { data } = await supabase.from("checkins").select("photo_path, product_id").eq("id", id).single();
+  const { data } = await supabase.from("checkins").select("photo_path, thumb_path, product_id").eq("id", id).single();
   if (!data) return;
 
   await supabase.from("checkins").delete().eq("id", id);
-  if (data.photo_path) await supabase.storage.from(PHOTO_BUCKET).remove([data.photo_path]);
+  const paths = photoPaths(data);
+  if (paths.length) await supabase.storage.from(PHOTO_BUCKET).remove(paths);
 
   revalidatePath("/", "layout");
   redirect(`/tins/${data.product_id}`);
