@@ -24,7 +24,15 @@ async function CheckinPageContent({ params }: Pick<PageProps<"/checkins/[id]">, 
 
   return (
     <>
-      <PageHeader title="" back="/" />
+      <PageHeader
+        title=""
+        back="/"
+        action={
+          <Link href={`/checkins/${checkin.id}/edit`} className="text-sm font-semibold text-sea">
+            Edit
+          </Link>
+        }
+      />
       <article className="card overflow-hidden">
         {checkin.photo_url && (
           // eslint-disable-next-line @next/next/no-img-element -- signed Supabase URL

@@ -6,21 +6,24 @@ import { createClient } from "@/lib/supabase/client";
 import { PHOTO_BUCKET } from "@/lib/supabase/config";
 import { resizeImage } from "@/lib/resize-image";
 import { todayLocal } from "@/lib/format";
+import type { Checkin } from "@/lib/types";
 import { StarInput } from "./StarInput";
 
-export function CheckinForm({ productId }: { productId: string }) {
+/** Creates a check-in for `productId`, or edits `existing` when given. */
+export function CheckinForm({ productId, existing }: { productId: string; existing?: Checkin }) {
   const router = useRouter();
-  const [rating, setRating] = useState(0);
-  const [note, setNote] = useState("");
-  const [location, setLocation] = useState("");
-  const [triedOn, setTriedOn] = useState(todayLocal);
+  const [rating, setRating] = useState(existing ? Number(existing.rating) : 0);
+  const [note, setNote] = useState(existing?.note ?? "");
+  const [location, setLocation] = useState(existing?.location ?? "");
+  const [triedOn, setTriedOn] = useState(existing?.tried_on ?? todayLocal());
   const [photo, setPhoto] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  // Starts as the saved photo's signed URL; replaced by a local object URL when a new photo is picked.
+  const [preview, setPreview] = useState<string | null>(existing?.photo_url ?? null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   function choosePhoto(file: File | null) {
-    if (preview) URL.revokeObjectURL(preview);
+    if (preview?.startsWith("blob:")) URL.revokeObjectURL(preview);
     setPhoto(file);
     setPreview(file ? URL.createObjectURL(file) : null);
   }
@@ -48,21 +51,32 @@ export function CheckinForm({ productId }: { productId: string }) {
         if (upErr) throw upErr;
       }
 
-      const { data, error: insErr } = await supabase
-        .from("checkins")
-        .insert({
-          product_id: productId,
-          rating,
-          note: note.trim() || null,
-          location: location.trim() || null,
-          tried_on: triedOn,
-          photo_path,
-        })
-        .select("id")
-        .single();
-      if (insErr) {
+      const fields = {
+        rating,
+        note: note.trim() || null,
+        location: location.trim() || null,
+        tried_on: triedOn,
+      };
+      // When editing, keep the saved photo unless it was removed or replaced.
+      const keptPhoto = existing && preview && !photo ? existing.photo_path : null;
+      const { data, error: saveErr } = existing
+        ? await supabase
+            .from("checkins")
+            .update({ ...fields, photo_path: photo_path ?? keptPhoto })
+            .eq("id", existing.id)
+            .select("id")
+            .single()
+        : await supabase
+            .from("checkins")
+            .insert({ ...fields, product_id: productId, photo_path })
+            .select("id")
+            .single();
+      if (saveErr) {
         if (photo_path) await supabase.storage.from(PHOTO_BUCKET).remove([photo_path]);
-        throw insErr;
+        throw saveErr;
+      }
+      if (existing?.photo_path && existing.photo_path !== (photo_path ?? keptPhoto)) {
+        await supabase.storage.from(PHOTO_BUCKET).remove([existing.photo_path]);
       }
 
       router.push(`/checkins/${data.id}`);
@@ -146,7 +160,7 @@ export function CheckinForm({ productId }: { productId: string }) {
       {error && <p className="rounded-xl bg-coral/10 p-3 text-sm text-coral">{error}</p>}
 
       <button className="btn w-full" disabled={saving}>
-        {saving ? "Saving…" : "Save check-in"}
+        {saving ? "Saving…" : existing ? "Save changes" : "Save check-in"}
       </button>
     </form>
   );

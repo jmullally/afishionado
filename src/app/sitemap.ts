@@ -5,5 +5,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     { url: "https://afishionado.app/", changeFrequency: "monthly", priority: 1 },
     { url: "https://afishionado.app/login", changeFrequency: "yearly", priority: 0.5 },
+    { url: "https://afishionado.app/privacy", changeFrequency: "yearly", priority: 0.2 },
+    { url: "https://afishionado.app/terms", changeFrequency: "yearly", priority: 0.2 },
   ];
 }

@@ -9,14 +9,9 @@ export const metadata: Metadata = {
   description:
     "Log, rate and remember every tin of fish you try. Half-star ratings, tasting notes, photos to share, and a want-to-try list for your next shop.",
   alternates: { canonical: "/" },
-  openGraph: {
-    title: "afishionado · A tasting diary for tinned fish",
-    description: "Log, rate and remember every tin of fish you try.",
-    url: "/",
-    siteName: "afishionado",
-    type: "website",
-    images: [{ url: "/icons/icon-512.png", width: 512, height: 512 }],
-  },
+  // Open Graph tags (including the preview image) come from app/opengraph-image.tsx;
+  // setting openGraph here would drop that image.
+  twitter: { card: "summary_large_image" },
 };
 
 const FEATURES = [
@@ -184,9 +179,13 @@ export default function WelcomePage() {
       <footer className="pb-safe border-t border-line">
         <div className="mx-auto flex max-w-5xl flex-col gap-2 px-4 py-6 text-sm text-muted sm:flex-row sm:justify-between sm:px-6">
           <span>afishionado · for people who read tin labels like wine lists</span>
-          <Link href="/login" className="font-semibold text-sea">
-            Sign in
-          </Link>
+          <nav className="flex gap-4">
+            <Link href="/privacy">Privacy</Link>
+            <Link href="/terms">Terms</Link>
+            <Link href="/login" className="font-semibold text-sea">
+              Sign in
+            </Link>
+          </nav>
         </div>
       </footer>
     </div>
