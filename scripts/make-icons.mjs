@@ -1,6 +1,6 @@
 // Renders the tin logo to the PNG icons the PWA and iOS Home Screen need.
 // Run: node scripts/make-icons.mjs
-import { mkdir } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import sharp from "sharp";
 
 const tin = (scale) => `
@@ -28,3 +28,26 @@ for (const [name, size, scale] of outputs) {
   await sharp(svg(scale)).resize(size, size).png().toFile(`public/icons/${name}`);
   console.log("wrote", name);
 }
+
+// Browser-tab favicon: the tin alone on a transparent background, as a
+// multi-size .ico (each size stored as an embedded PNG).
+const tinOnly = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="512" height="512">
+  ${tin(1).replace(/<g [^>]*>/, "<g>")}</svg>`);
+const sizes = [16, 32, 48];
+const pngs = await Promise.all(sizes.map((s) => sharp(tinOnly).resize(s, s).png().toBuffer()));
+const header = Buffer.alloc(6 + 16 * sizes.length);
+header.writeUInt16LE(1, 2); // type: icon
+header.writeUInt16LE(sizes.length, 4);
+let offset = header.length;
+sizes.forEach((s, i) => {
+  const entry = 6 + 16 * i;
+  header.writeUInt8(s, entry);
+  header.writeUInt8(s, entry + 1);
+  header.writeUInt16LE(1, entry + 4); // color planes
+  header.writeUInt16LE(32, entry + 6); // bits per pixel
+  header.writeUInt32LE(pngs[i].length, entry + 8);
+  header.writeUInt32LE(offset, entry + 12);
+  offset += pngs[i].length;
+});
+await writeFile("src/app/favicon.ico", Buffer.concat([header, ...pngs]));
+console.log("wrote favicon.ico");
