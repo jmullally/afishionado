@@ -7,16 +7,25 @@ import { PHOTO_BUCKET } from "@/lib/supabase/config";
 import { photoPaths } from "@/lib/photos";
 import { resizeImage } from "@/lib/resize-image";
 import { todayLocal } from "@/lib/format";
-import type { Checkin } from "@/lib/types";
+import type { Checkin, Visibility } from "@/lib/types";
 import { StarInput } from "./StarInput";
 
 /** Creates a check-in for `productId`, or edits `existing` when given. */
-export function CheckinForm({ productId, existing }: { productId: string; existing?: Checkin }) {
+export function CheckinForm({
+  productId,
+  existing,
+  defaultVisibility = "friends",
+}: {
+  productId: string;
+  existing?: Checkin;
+  defaultVisibility?: Visibility;
+}) {
   const router = useRouter();
   const [rating, setRating] = useState(existing ? Number(existing.rating) : 0);
   const [note, setNote] = useState(existing?.note ?? "");
   const [location, setLocation] = useState(existing?.location ?? "");
   const [triedOn, setTriedOn] = useState(existing?.tried_on ?? todayLocal());
+  const [visibility, setVisibility] = useState<Visibility>(existing?.visibility ?? defaultVisibility);
   const [photo, setPhoto] = useState<File | null>(null);
   // Starts as the saved photo's signed URL; replaced by a local object URL when a new photo is picked.
   const [preview, setPreview] = useState<string | null>(existing?.photo_url ?? null);
@@ -65,6 +74,7 @@ export function CheckinForm({ productId, existing }: { productId: string; existi
         note: note.trim() || null,
         location: location.trim() || null,
         tried_on: triedOn,
+        visibility,
       };
       // When editing, keep the saved photo unless it was removed or replaced.
       const kept = existing && preview && !photo ? existing : null;
@@ -168,6 +178,28 @@ export function CheckinForm({ productId, existing }: { productId: string; existi
             required
           />
         </label>
+      </div>
+
+      <div className="space-y-1.5">
+        <span className="text-sm font-semibold">Who can see it</span>
+        <div className="grid grid-cols-2 gap-1 rounded-xl bg-line/60 p-1">
+          {(
+            [
+              ["friends", "👥 Friends"],
+              ["private", "🔒 Only me"],
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setVisibility(value)}
+              aria-pressed={visibility === value}
+              className={`rounded-lg py-2 text-sm font-semibold ${visibility === value ? "bg-paper text-ink shadow-sm" : "text-muted"}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {error && <p className="rounded-xl bg-coral/10 p-3 text-sm text-coral">{error}</p>}

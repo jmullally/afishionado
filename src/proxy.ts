@@ -46,7 +46,8 @@ export async function proxy(request: NextRequest) {
     response.cookies.getAll().forEach((c) => r.cookies.set(c));
     return r;
   }
-  if (!signedIn && !isPublic) return redirectTo("/login");
+  // Remember where they were going (e.g. a friend's invite link) for after sign-in.
+  if (!signedIn && !isPublic) return redirectTo(`/login?next=${encodeURIComponent(pathname)}`);
   if (signedIn && (pathname === "/login" || pathname === "/welcome")) return redirectTo("/");
   return response;
 }

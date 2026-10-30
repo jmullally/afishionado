@@ -9,6 +9,8 @@ import { createClient } from "@/lib/supabase/client";
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const nextParam = searchParams.get("next");
+  const next = nextParam?.startsWith("/") && !nextParam.startsWith("//") ? nextParam : "/";
   const [mode, setMode] = useState<"signin" | "signup" | "forgot">(searchParams.get("mode") === "signup" ? "signup" : "signin");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -48,7 +50,7 @@ export function LoginForm() {
         setBusy(false);
         return;
       }
-      router.replace("/");
+      router.replace(next);
       router.refresh();
       return;
     }
@@ -64,7 +66,7 @@ export function LoginForm() {
     setBusy(false);
     if (error) return setMessage({ kind: "error", text: error.message });
     if (data.session) {
-      router.replace("/");
+      router.replace(next);
       router.refresh();
     } else {
       setMessage({ kind: "info", text: "Check your email for a link to confirm your account." });

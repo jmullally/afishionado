@@ -7,10 +7,11 @@ import { CHECKIN_SELECT, type Checkin } from "@/lib/types";
 import Loading from "../loading";
 
 async function PhotosPageContent() {
-  const { supabase } = await requireUser();
+  const { supabase, user } = await requireUser();
   const { data } = await supabase
     .from("checkins")
     .select(CHECKIN_SELECT)
+    .eq("user_id", user.id)
     .not("photo_path", "is", null)
     .order("tried_on", { ascending: false })
     .order("created_at", { ascending: false });

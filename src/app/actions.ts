@@ -19,8 +19,13 @@ export async function toggleWishlist(productId: string, saved: boolean) {
 }
 
 export async function deleteCheckin(id: string) {
-  const { supabase } = await requireUser();
-  const { data } = await supabase.from("checkins").select("photo_path, thumb_path, product_id").eq("id", id).single();
+  const { supabase, user } = await requireUser();
+  const { data } = await supabase
+    .from("checkins")
+    .select("photo_path, thumb_path, product_id")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single();
   if (!data) return;
 
   await supabase.from("checkins").delete().eq("id", id);

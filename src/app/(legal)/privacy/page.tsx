@@ -12,12 +12,12 @@ export default function PrivacyPage() {
   return (
     <>
       <h1>Privacy policy</h1>
-      <p className="text-sm text-muted">Last updated October 29, 2026</p>
+      <p className="text-sm text-muted">Last updated October 30, 2026</p>
 
       <p>
         afishionado is a small, independent tasting diary for tinned fish. This page explains what it stores about you
-        and why. The short version: your diary is private to you, we don&apos;t sell or share your data, and there are
-        no ads.
+        and why. The short version: you choose which check-ins your friends can see, nobody else sees them, we
+        don&apos;t sell your data, and there are no ads.
       </p>
 
       <h2>What we store</h2>
@@ -31,6 +31,10 @@ export default function PrivacyPage() {
           add, and your want-to-try list.
         </li>
         <li>
+          <strong>Friends:</strong> who you&apos;re friends with, friend requests, toasts you give, people you block,
+          and any check-ins you report.
+        </li>
+        <li>
           <strong>Tins you add:</strong> when you add a tin that isn&apos;t in the catalog, its details (brand, name,
           fish, packing, size) become part of the shared catalog that every user can search.
         </li>
@@ -38,14 +42,27 @@ export default function PrivacyPage() {
 
       <h2>Who can see it</h2>
       <ul>
-        <li>Your check-ins, notes, photos and want-to-try list are visible only to you when signed in.</li>
+        <li>
+          Each check-in is either <strong>Friends</strong> (your accepted friends can see it, with its photo, notes and
+          rating) or <strong>Only me</strong>. You choose when you check in, can change it any time, and set the
+          default on your Me page. Check-ins made before friends existed stay Only me until you share them.
+        </li>
+        <li>
+          Friends are mutual: someone only sees your shared check-ins after you both agree. Blocking someone ends the
+          friendship and stops them seeing any of your check-ins.
+        </li>
+        <li>
+          Your name is visible to signed-in users who visit your profile or invite link. Your email address is never
+          shown; someone who already knows it can use it to send you a friend request.
+        </li>
+        <li>Your want-to-try list is only visible to you.</li>
         <li>
           Your ratings are included, anonymously, in each tin&apos;s community average. Other users see the average and
           the number of check-ins, never who made them.
         </li>
         <li>
-          Photos are stored privately. They&apos;re only shared when you use the Share or save photo button, and then
-          only with the app or person you choose.
+          Photos are stored privately. Friends can see the photo on a check-in you&apos;ve shared with them; otherwise
+          photos only leave afishionado when you use a share button.
         </li>
       </ul>
 
@@ -61,6 +78,11 @@ export default function PrivacyPage() {
         </li>
       </ul>
 
+      <p>
+        When you scan a barcode, afishionado looks the barcode number up in Open Food Facts, a free public product
+        database, to suggest the tin&apos;s name. Only the barcode number is sent, never anything about you.
+      </p>
+
       <h2>Cookies</h2>
       <p>
         The only cookies afishionado sets are the ones that keep you signed in. There are no advertising or tracking
@@ -69,7 +91,8 @@ export default function PrivacyPage() {
 
       <h2>Deleting your data</h2>
       <p>
-        You can delete any check-in, and its photo, from inside the app at any time. To delete your whole account and
+        You can delete any check-in, and its photo, from inside the app at any time, and download a copy of
+        everything from Me → Download my diary. To delete your whole account and
         everything in it, email <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> from the address you signed up
         with. We&apos;ll remove it within 30 days. Tins you added to the catalog stay in the catalog, without your name
         attached.

@@ -18,7 +18,12 @@ async function TinPageContent({ params }: Pick<PageProps<"/tins/[id]">, "params"
   const [{ data: product }, { data: stats }, { data: mine }, { data: saved }] = await Promise.all([
     supabase.from("products").select(PRODUCT_SELECT).eq("id", id).maybeSingle<Product>(),
     supabase.rpc("product_stats", { p_product_id: id }).maybeSingle<{ avg_rating: number | null; checkin_count: number }>(),
-    supabase.from("checkins").select(CHECKIN_SELECT).eq("product_id", id).order("tried_on", { ascending: false }),
+    supabase
+      .from("checkins")
+      .select(CHECKIN_SELECT)
+      .eq("product_id", id)
+      .eq("user_id", user.id)
+      .order("tried_on", { ascending: false }),
     supabase.from("wishlist").select("product_id").eq("user_id", user.id).eq("product_id", id).maybeSingle(),
   ]);
   if (!product) notFound();

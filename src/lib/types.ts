@@ -17,9 +17,19 @@ export type Product = {
   brand: Brand;
 };
 
+export type Visibility = "private" | "friends";
+
+export type Profile = {
+  id: string;
+  display_name: string | null;
+  default_visibility: Visibility;
+};
+
 export type Checkin = {
   id: string;
+  user_id: string;
   product_id: string;
+  visibility: Visibility;
   rating: number;
   note: string | null;
   location: string | null;

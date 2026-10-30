@@ -1,19 +1,24 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { signOut } from "@/app/actions";
+import { setDefaultVisibility, shareAllCheckins, updateDisplayName } from "@/app/social-actions";
+import { BadgeGrid } from "@/components/BadgeGrid";
 import { ExportButton } from "@/components/ExportButton";
 import { PageHeader } from "@/components/PageHeader";
 import { Stars } from "@/components/Stars";
+import { earnedBadges } from "@/lib/badges";
+import { getFriendships } from "@/lib/social";
 import { requireUser } from "@/lib/supabase/server";
 import { CHECKIN_SELECT, type Checkin } from "@/lib/types";
 import Loading from "../loading";
 
 async function MePageContent() {
   const { supabase, user } = await requireUser();
-  const [{ data: profile }, { data }, { count: wishCount }] = await Promise.all([
-    supabase.from("profiles").select("display_name").eq("id", user.id).maybeSingle(),
-    supabase.from("checkins").select(CHECKIN_SELECT),
+  const [{ data: profile }, { data }, { count: wishCount }, friendships] = await Promise.all([
+    supabase.from("profiles").select("display_name, default_visibility").eq("id", user.id).maybeSingle(),
+    supabase.from("checkins").select(CHECKIN_SELECT).eq("user_id", user.id),
     supabase.from("wishlist").select("product_id", { count: "exact", head: true }).eq("user_id", user.id),
+    getFriendships(supabase, user.id),
   ]);
   const checkins = (data ?? []) as Checkin[];
 
@@ -30,6 +35,9 @@ async function MePageContent() {
     if (!prev || Number(c.rating) > Number(prev.rating)) bestByProduct.set(c.product_id, c);
   }
   const favorites = [...bestByProduct.values()].sort((a, b) => Number(b.rating) - Number(a.rating)).slice(0, 5);
+  const badges = earnedBadges(checkins);
+  const privateCount = checkins.filter((c) => c.visibility === "private").length;
+  const shareByDefault = profile?.default_visibility !== "private";
 
   return (
     <>
@@ -49,6 +57,18 @@ async function MePageContent() {
       </div>
 
       <div className="space-y-4">
+        <Link href="/friends" className="card flex items-center justify-between p-4 hover:border-sea">
+          <span className="font-semibold">👥 Friends</span>
+          <span className="text-muted">
+            {friendships.incoming.length > 0 && (
+              <span className="mr-2 rounded-full bg-coral px-2 py-0.5 text-xs font-semibold text-white">
+                {friendships.incoming.length} new
+              </span>
+            )}
+            {friendships.friends.length} ›
+          </span>
+        </Link>
+
         <Link href="/wishlist" className="card flex items-center justify-between p-4 hover:border-sea">
           <span className="font-semibold">☆ Want to try</span>
           <span className="text-muted">{wishCount ?? 0} ›</span>
@@ -89,6 +109,46 @@ async function MePageContent() {
             </div>
           </section>
         )}
+
+        <section className="card p-4">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
+            Badges · {badges.length}
+          </h2>
+          <BadgeGrid earned={badges} showLocked />
+        </section>
+
+        <section className="card space-y-3 p-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">Profile and sharing</h2>
+          <form action={updateDisplayName} className="flex gap-2">
+            <input
+              name="display_name"
+              defaultValue={profile?.display_name ?? ""}
+              maxLength={40}
+              className="field"
+              aria-label="Your name"
+              placeholder="Your name"
+            />
+            <button className="btn-ghost shrink-0">Save</button>
+          </form>
+          <p className="text-sm text-muted">Friends see this name.</p>
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-sm">
+              New check-ins are <strong>{shareByDefault ? "shared with friends" : "only for me"}</strong>
+            </span>
+            <form action={setDefaultVisibility.bind(null, shareByDefault ? "private" : "friends")}>
+              <button className="btn-ghost shrink-0 px-3 py-2 text-sm">Change</button>
+            </form>
+          </div>
+          {privateCount > 0 && (
+            <form action={shareAllCheckins} className="space-y-2">
+              <p className="text-sm text-muted">
+                {privateCount} of your check-ins {privateCount === 1 ? "is" : "are"} private (🔒). You can share them one
+                at a time from Edit, or all at once:
+              </p>
+              <button className="btn-ghost w-full">Share all {privateCount} with friends</button>
+            </form>
+          )}
+        </section>
 
         <ExportButton />
 

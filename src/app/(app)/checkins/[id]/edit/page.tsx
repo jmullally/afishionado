@@ -10,8 +10,13 @@ import Loading from "../../../loading";
 
 async function EditCheckinContent({ params }: Pick<PageProps<"/checkins/[id]/edit">, "params">) {
   const { id } = await params;
-  const { supabase } = await requireUser();
-  const { data } = await supabase.from("checkins").select(CHECKIN_SELECT).eq("id", id).maybeSingle<Checkin>();
+  const { supabase, user } = await requireUser();
+  const { data } = await supabase
+    .from("checkins")
+    .select(CHECKIN_SELECT)
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .maybeSingle<Checkin>();
   if (!data) notFound();
   const [checkin] = await withPhotoUrls(supabase, [data]);
 

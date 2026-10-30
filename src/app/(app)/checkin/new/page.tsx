@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { TinSearch } from "@/components/TinSearch";
 import { TinRow } from "@/components/TinRow";
 import { requireUser } from "@/lib/supabase/server";
-import { PRODUCT_SELECT, type Product } from "@/lib/types";
+import { PRODUCT_SELECT, type Product, type Visibility } from "@/lib/types";
 import Loading from "../../loading";
 
 async function CheckinStep({ searchParams }: Pick<PageProps<"/checkin/new">, "searchParams">) {
@@ -25,12 +25,11 @@ async function CheckinStep({ searchParams }: Pick<PageProps<"/checkin/new">, "se
     );
   }
 
-  const { supabase } = await requireUser();
-  const { data: product } = await supabase
-    .from("products")
-    .select(PRODUCT_SELECT)
-    .eq("id", productId)
-    .maybeSingle<Product>();
+  const { supabase, user } = await requireUser();
+  const [{ data: product }, { data: profile }] = await Promise.all([
+    supabase.from("products").select(PRODUCT_SELECT).eq("id", productId).maybeSingle<Product>(),
+    supabase.from("profiles").select("default_visibility").eq("id", user.id).maybeSingle<{ default_visibility: Visibility }>(),
+  ]);
 
   return (
     <>
@@ -38,7 +37,7 @@ async function CheckinStep({ searchParams }: Pick<PageProps<"/checkin/new">, "se
       {product ? (
         <div className="space-y-5">
           <TinRow product={product} href="/checkin/new" />
-          <CheckinForm productId={product.id} />
+          <CheckinForm productId={product.id} defaultVisibility={profile?.default_visibility} />
         </div>
       ) : (
         <p className="text-muted">That tin couldn&apos;t be found.</p>

@@ -31,8 +31,12 @@ export function ExportButton() {
     setStatus("Gathering your check-ins…");
     try {
       const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("You've been signed out. Sign in again.");
       const [{ data: checkins, error }, { data: wishlist }] = await Promise.all([
-        supabase.from("checkins").select(CHECKIN_SELECT).order("tried_on"),
+        supabase.from("checkins").select(CHECKIN_SELECT).eq("user_id", user.id).order("tried_on"),
         supabase.from("wishlist").select("created_at, product:products(*, brand:brands(*))"),
       ]);
       if (error) throw error;
