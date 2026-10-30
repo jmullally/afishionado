@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { isConfigured, SUPABASE_KEY, SUPABASE_URL } from "@/lib/supabase/config";
 
-const PUBLIC_PATHS = ["/login", "/setup", "/auth"];
+const PUBLIC_PATHS = ["/login", "/setup", "/auth", "/welcome"];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -40,8 +40,14 @@ export async function proxy(request: NextRequest) {
     return r;
   };
 
+  // Signed-out visitors to the home page see the public landing page instead of the diary.
+  if (!signedIn && pathname === "/") {
+    const r = NextResponse.rewrite(new URL("/welcome", request.url));
+    response.cookies.getAll().forEach((c) => r.cookies.set(c));
+    return r;
+  }
   if (!signedIn && !isPublic) return redirectTo("/login");
-  if (signedIn && pathname === "/login") return redirectTo("/");
+  if (signedIn && (pathname === "/login" || pathname === "/welcome")) return redirectTo("/");
   return response;
 }
 
