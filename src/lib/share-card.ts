@@ -58,11 +58,11 @@ function drawTin(ctx: CanvasRenderingContext2D, x: number, y: number, w: number)
   ctx.scale(s, s);
   ctx.fillStyle = COLORS.sea;
   ctx.beginPath();
-  ctx.roundRect(4, 12, 56, 40, 14);
+  roundRect(ctx, 4, 12, 56, 40, 14);
   ctx.fill();
   ctx.fillStyle = COLORS.gold;
   ctx.beginPath();
-  ctx.roundRect(9, 17, 46, 30, 10);
+  roundRect(ctx, 9, 17, 46, 30, 10);
   ctx.fill();
   ctx.fillStyle = COLORS.ink;
   ctx.fill(new Path2D("M17 32c6-7 17-8 25-3l6-4v14l-6-4c-8 5-19 4-25-3z"));
@@ -95,14 +95,29 @@ function drawStars(ctx: CanvasRenderingContext2D, x: number, y: number, size: nu
 }
 
 async function loadPhoto(url: string) {
-  const blob = await (await fetch(url)).blob();
-  return createImageBitmap(blob);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Photo download failed (${res.status})`);
+  return createImageBitmap(await res.blob());
+}
+
+/** Rounded rectangle path, with a plain rectangle where the browser lacks roundRect. */
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  if (typeof ctx.roundRect === "function") ctx.roundRect(x, y, w, h, r);
+  else ctx.rect(x, y, w, h);
 }
 
 export async function renderShareCard(input: CardInput): Promise<Blob> {
   const { display, body } = fontFamilies();
-  await Promise.all([document.fonts.load(`700 64px ${display}`), document.fonts.load(`400 34px ${body}`)]);
-  const photo = input.photoUrl ? await loadPhoto(input.photoUrl) : null;
+  // Neither the fonts nor the photo are worth failing the whole card over.
+  await Promise.all([document.fonts.load(`700 64px ${display}`), document.fonts.load(`400 34px ${body}`)]).catch(
+    (err) => console.warn("Share card fonts didn't load", err),
+  );
+  const photo = input.photoUrl
+    ? await loadPhoto(input.photoUrl).catch((err) => {
+        console.warn("Share card photo didn't load", err);
+        return null;
+      })
+    : null;
 
   const canvas = document.createElement("canvas");
   canvas.width = W;
@@ -118,7 +133,7 @@ export async function renderShareCard(input: CardInput): Promise<Blob> {
   const frame = { x: PAD, y: PAD, w: W - PAD * 2, h: 720 };
   ctx.save();
   ctx.beginPath();
-  ctx.roundRect(frame.x, frame.y, frame.w, frame.h, 40);
+  roundRect(ctx, frame.x, frame.y, frame.w, frame.h, 40);
   ctx.clip();
   if (photo) {
     const scale = Math.max(frame.w / photo.width, frame.h / photo.height);

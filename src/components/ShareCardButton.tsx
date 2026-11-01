@@ -12,6 +12,8 @@ export function ShareCardButton({ card, filename, title, text }: { card: CardInp
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const { photoUrl, brand, name, rating, note, meta } = card;
 
   useEffect(() => {
@@ -24,12 +26,17 @@ export function ShareCardButton({ card, filename, title, text }: { card: CardInp
         setFile(new File([blob], filename, { type: "image/jpeg" }));
         setPreview(url);
       })
-      .catch(() => !cancelled && setError("Couldn't create the card."));
+      .catch((err) => {
+        if (cancelled) return;
+        console.error("Share card failed", err);
+        setFailed(true);
+        setError(`Couldn't create the card${err instanceof Error && err.message ? ` (${err.message})` : ""}.`);
+      });
     return () => {
       cancelled = true;
       if (url) URL.revokeObjectURL(url);
     };
-  }, [photoUrl, brand, name, rating, note, meta, filename]);
+  }, [photoUrl, brand, name, rating, note, meta, filename, attempt]);
 
   async function share() {
     if (!file) return;
@@ -38,9 +45,19 @@ export function ShareCardButton({ card, filename, title, text }: { card: CardInp
 
   return (
     <div className="space-y-3">
-      <button type="button" onClick={share} disabled={!file} className="btn w-full">
-        {file ? "Share as a card" : "Making your card…"}
-      </button>
+      {failed ? (
+        <button type="button" onClick={() => {
+            setFailed(false);
+            setError(null);
+            setAttempt((n) => n + 1);
+          }} className="btn w-full">
+          Try making the card again
+        </button>
+      ) : (
+        <button type="button" onClick={share} disabled={!file} className="btn w-full">
+          {file ? "Share as a card" : "Making your card…"}
+        </button>
+      )}
       {preview && (
         <details className="text-center text-sm text-muted">
           <summary className="cursor-pointer">Preview the card</summary>

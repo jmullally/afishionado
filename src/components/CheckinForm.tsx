@@ -143,17 +143,28 @@ export function CheckinForm({
             </button>
           </div>
         ) : (
-          <label className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-line bg-paper p-6 text-center text-muted hover:border-sea">
-            <span className="text-3xl">📷</span>
-            <span className="font-semibold text-ink">Add a photo</span>
-            <span className="text-xs">Take one or choose from your library</span>
-            <input
-              type="file"
-              accept="image/*"
-              className="sr-only"
-              onChange={(e) => choosePhoto(e.target.files?.[0] ?? null)}
-            />
-          </label>
+          // Two inputs, because Android's photo picker leaves out the camera unless `capture` is set.
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { icon: "📷", label: "Take a photo", capture: "environment" as const },
+              { icon: "🖼️", label: "Choose from library", capture: undefined },
+            ].map(({ icon, label, capture }) => (
+              <label
+                key={label}
+                className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-line bg-paper p-5 text-center text-muted hover:border-sea"
+              >
+                <span className="text-3xl">{icon}</span>
+                <span className="text-sm font-semibold text-ink">{label}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture={capture}
+                  className="sr-only"
+                  onChange={(e) => choosePhoto(e.target.files?.[0] ?? null)}
+                />
+              </label>
+            ))}
+          </div>
         )}
       </div>
 
