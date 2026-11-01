@@ -108,10 +108,14 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
 
 export async function renderShareCard(input: CardInput): Promise<Blob> {
   const { display, body } = fontFamilies();
-  // Neither the fonts nor the photo are worth failing the whole card over.
-  await Promise.all([document.fonts.load(`700 64px ${display}`), document.fonts.load(`400 34px ${body}`)]).catch(
-    (err) => console.warn("Share card fonts didn't load", err),
-  );
+  // Preload only each list's first font: next/font's "… Fallback" faces point at local fonts
+  // Android doesn't have, and Chrome there rejects the whole load. Nor is a font worth failing the card over.
+  const first = (family: string) => family.split(",")[0];
+  await Promise.all([
+    document.fonts.load(`700 64px ${first(display)}`),
+    document.fonts.load(`600 32px ${first(body)}`),
+    document.fonts.load(`400 34px ${first(body)}`),
+  ]).catch((err) => console.warn("Share card fonts didn't load", err));
   const photo = input.photoUrl
     ? await loadPhoto(input.photoUrl).catch((err) => {
         console.warn("Share card photo didn't load", err);
